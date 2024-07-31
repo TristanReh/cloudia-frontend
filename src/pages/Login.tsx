@@ -1,4 +1,7 @@
-import { useState } from "react";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import sha256 from 'crypto-js/sha256'
 
 enum LoginState {
   EMAIL,
@@ -7,7 +10,9 @@ enum LoginState {
 }
 
 export default function Login()  {
-    const [loginState, setLoginState] = useState<LoginState>(LoginState.REGISTER);
+    const navigate = useNavigate();
+
+    const [loginState, setLoginState] = useState<LoginState>(LoginState.EMAIL);
 
     const [emailInput, setEmailInput] = useState<string>("");
     const [emailInputValid, setEmailInputValid] = useState<boolean>(false);
@@ -15,6 +20,15 @@ export default function Login()  {
     const [loginPasswordInput, setLoginPasswordInput] = useState<string>("");    
     const [registerPasswordInput, setRegisterPasswordInput] = useState<string>("");
     const [repeatPasswordInput, setRepeatPasswordInput] = useState<string>("");
+
+    const [lastErrorMessage, setLastErrorMessage] = useState<string>("");
+
+    useEffect(()=>{
+      if (repeatPasswordInput !== registerPasswordInput)
+        setLastErrorMessage("The passwords do not match")
+      else
+        setLastErrorMessage("")
+    }, [repeatPasswordInput])
 
     function handleEmailInput(e : React.ChangeEvent<HTMLInputElement>) {
       setEmailInput(e.target.value);
@@ -25,6 +39,30 @@ export default function Login()  {
       setLoginPasswordInput("");
       setRegisterPasswordInput("");
       setRepeatPasswordInput("");
+    }
+
+    function handleLogin() {
+      axios.get("http://192.168.2.177:8000/login", {
+        withCredentials: true,
+        headers: {
+          "email": emailInput,
+          "password": sha256(loginPasswordInput).toString()
+        }
+      }).then(res => {
+          let status = res.status;
+          if (status == 200) navigate("/")
+        })
+        .catch(err => {
+          let status = err.response.status;
+          if (status == 401 && loginState === LoginState.EMAIL) setLoginState(LoginState.LOGIN)
+          else if (status == 401 && loginState === LoginState.LOGIN) {
+            setLoginPasswordInput("")
+            setLastErrorMessage("Wrong password")
+          }
+          else if (status == 404 && loginState === LoginState.EMAIL) {
+            setLoginState(LoginState.REGISTER) 
+          }
+        })
     }
 
     return (
@@ -62,11 +100,12 @@ export default function Login()  {
                 </>
               : null
             }
-            <button className="mt-3 w-full bg-violet-300 p-4 rounded-xl font-medium text-slate-700" onClick={() => setLoginState(LoginState.LOGIN)}>
+            <button className="mt-3 w-full bg-violet-300 p-4 rounded-xl font-medium text-slate-700" onClick={() => handleLogin()}>
               {
                 loginState == LoginState.LOGIN ? "Login" : loginState == LoginState.REGISTER ? "Register" : "Continue"
               }
             </button>
+            { lastErrorMessage ? <p className="text-red-300">Error: {lastErrorMessage}</p> : null }
         </div>
       </div>
     )
