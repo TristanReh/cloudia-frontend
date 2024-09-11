@@ -65,6 +65,20 @@ export default function Login()  {
         })
     }
 
+    function handleRegister() {
+      axios.post("http://192.168.2.177:8000/register", {}, {
+        withCredentials: true,
+        headers: {
+          "email": emailInput,
+          "password": sha256(registerPasswordInput).toString()
+        }
+      }).then(_ => { setLoginState(LoginState.LOGIN); })
+      .catch(err => {
+        let status = err.response.status;
+        if (status == 400) setLastErrorMessage(err.response.message)
+      })
+    }
+
     return (
       <div className="flex flex-row min-w-screen min-h-screen justify-center items-center bg-violet-100 ">
         <div className="gap-6 p-[150px] drop-shadow-2xl flex flex-col items-center rounded-[60px] bg-white w-[700px] h-[1000px]">
@@ -100,11 +114,23 @@ export default function Login()  {
                 </>
               : null
             }
-            <button className="mt-3 w-full bg-violet-300 p-4 rounded-xl font-medium text-slate-700" onClick={() => handleLogin()}>
-              {
-                loginState == LoginState.LOGIN ? "Login" : loginState == LoginState.REGISTER ? "Register" : "Continue"
-              }
-            </button>
+
+            {
+              loginState == LoginState.EMAIL ? 
+                <button className="mt-3 w-full bg-violet-300 p-4 rounded-xl font-medium text-slate-700" onClick={() => handleLogin()}>
+                Continue
+                </button>
+              : loginState == LoginState.LOGIN ?
+                <button className="mt-3 w-full bg-violet-300 p-4 rounded-xl font-medium text-slate-700" onClick={() => handleLogin()}>
+                  Login
+                </button>
+              : loginState == LoginState.REGISTER ?
+                <button disabled={registerPasswordInput != repeatPasswordInput || registerPasswordInput.length < 6} className="mt-3 w-full bg-violet-300 p-4 rounded-xl font-medium text-slate-700 disabled:bg-slate-200" onClick={() => handleRegister()}>
+                Register 
+                </button>
+              : null
+            }
+
             { lastErrorMessage ? <p className="text-red-300">Error: {lastErrorMessage}</p> : null }
         </div>
       </div>
