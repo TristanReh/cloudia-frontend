@@ -42,7 +42,7 @@ export default function Login()  {
     }
 
     function handleLogin() {
-      axios.get("http://192.168.2.177:8000/login", {
+      axios.get("http://localhost:8000/login", {
         withCredentials: true,
         headers: {
           "email": emailInput,
@@ -66,7 +66,7 @@ export default function Login()  {
     }
 
     function handleRegister() {
-      axios.post("http://192.168.2.177:8000/register", {}, {
+      axios.post("http://localhost:8000/register", {}, {
         withCredentials: true,
         headers: {
           "email": emailInput,
